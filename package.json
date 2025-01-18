@@ -1,0 +1,11 @@
+{
+	"name": "kysely-rizzolver-codegen",
+	"version": "0.0.1",
+	"description": "Generates a ready to use KyselyRizzolver instance from the output of kysely-codegen tool.",
+	"main": "index.js",
+	"author": "YLivay",
+	"license": "MIT",
+	"dependencies": {
+		"typescript": "^5.7.3"
+	}
+}
