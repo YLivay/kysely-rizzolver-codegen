@@ -106,7 +106,7 @@ if (toGenerate.length > 0) {
 import type { DB } from '${importFrom}';
 import { KyselyRizzolver } from 'kysely-rizzolver';
 
-export const ${exportAs} = KyselyRizzolver.builder<DB>()
+export const ${exportAs} = KyselyRizzolver.builderForSchema<DB>()
 `;
 
 	for (const { table, columns } of toGenerate) {
