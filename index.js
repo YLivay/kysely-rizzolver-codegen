@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const fs = require('fs');
 const path = require('path');
 const ts = require('typescript');
@@ -8,7 +10,7 @@ let importFrom = '';
 let exportAs = 'rizzolver';
 
 const args = process.argv.slice(2);
-if (args.find((arg) => arg === '--help' || arg === '-h')) {
+if (args.includes('--help') || args.includes('-h')) {
 	console.log(`Usage: npx kysely-rizzolver-codegen --input <path> --output <path> [--import-from <path>]
 
 Options:
@@ -24,21 +26,26 @@ Options:
 	process.exit(0);
 }
 
-for (let i = 0; i < args.length - 1; i++) {
-	let arg = args[i];
-	let nextArg = args[i + 1];
-	if (arg === '--input') {
-		inputFile = nextArg;
-		i++;
-	} else if (arg === '--output') {
-		outputFile = nextArg;
-		i++;
-	} else if (arg === '--import-from') {
-		importFrom = nextArg;
-		i++;
-	} else if (arg === '--export-as') {
-		exportAs = nextArg;
-		i++;
+for (let i = 0; i < args.length; i++) {
+	const arg = args[i];
+	const nextArg = args[i + 1];
+	switch (arg) {
+		case '--input':
+			inputFile = nextArg;
+			i++;
+			break;
+		case '--output':
+			outputFile = nextArg;
+			i++;
+			break;
+		case '--import-from':
+			importFrom = nextArg;
+			i++;
+			break;
+		case '--export-as':
+			exportAs = nextArg;
+			i++;
+			break;
 	}
 }
 
@@ -61,12 +68,12 @@ if (!importFrom) {
 const source = ts.createSourceFile(
 	inputFile,
 	fs.readFileSync(inputFile, 'utf-8'),
-	ts.ScriptTarget.ES2015
+	ts.ScriptTarget.ES2015,
+	true
 );
 
 const dbInterface = source.statements.find(
-	(statement) =>
-		statement.kind === ts.SyntaxKind.InterfaceDeclaration && statement.name.text === 'DB'
+	(statement) => ts.isInterfaceDeclaration(statement) && statement.name.text === 'DB'
 );
 
 if (!dbInterface) {
@@ -75,19 +82,18 @@ if (!dbInterface) {
 
 const toGenerate = [];
 for (const member of dbInterface.members) {
-	if (member.kind === ts.SyntaxKind.PropertySignature) {
+	if (ts.isPropertySignature(member)) {
 		const value = member.type;
-		if (value.kind === ts.SyntaxKind.TypeReference) {
+		if (ts.isTypeReferenceNode(value)) {
 			const typeName = value.typeName.text;
 			const tableType = source.statements.find(
-				(statement) =>
-					statement.kind === ts.SyntaxKind.InterfaceDeclaration && statement.name.text === typeName
+				(statement) => ts.isInterfaceDeclaration(statement) && statement.name.text === typeName
 			);
 			if (!tableType) {
 				throw new Error('Could not find the type for ' + typeName);
 			}
 			const columns = tableType.members
-				.filter((member) => member.kind === ts.SyntaxKind.PropertySignature)
+				.filter((member) => ts.isPropertySignature(member))
 				.map((column) => column.name.text);
 			toGenerate.push({ table: member.name.text, columns: columns });
 		}
